@@ -46,3 +46,74 @@ button {
   background: rgba(140, 20, 20, 0.5);
   color: white;
 }
+
+/* -------------------------------- */
+/* STATISTICS                       */
+/* -------------------------------- */
+
+@keyframes statFill {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: var(--stat-width);
+  }
+}
+
+@keyframes statFillDelayed {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: var(--stat-width);
+  }
+}
+
+.animate-stat-fill {
+  width: var(--stat-width);
+  animation: statFill 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-stat-fill-delayed {
+  width: var(--stat-width);
+  animation: statFillDelayed 1100ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+/* -------------------------------- */
+/* QUESTION TRANSITIONS             */
+/* -------------------------------- */
+
+@keyframes questionIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.question-enter {
+  animation: questionIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* -------------------------------- */
+/* REDUCED MOTION                   */
+/* -------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-stat-fill,
+  .animate-stat-fill-delayed,
+  .question-enter {
+    animation: none;
+  }
+
+  .transition-\[width\] {
+    transition: none;
+  }
+}

@@ -5,13 +5,11 @@ import {
   characterNames,
 } from "../data/profiles";
 
-import StatBar from "../components/StatBar";
 import Button from "../components/Button";
 
 import { useGame } from "../context/GameContext";
 
 import {
-  getParticipantId,
   saveFinalResult,
   subscribeToGroupResults,
 } from "../services/firebaseResults";
@@ -20,22 +18,15 @@ import {
 // Допоміжні функції
 // --------------------------------------------------
 
-function getReaderPercentage(
-  value,
-  total
-) {
+function getReaderPercentage(value, total) {
   if (!total) {
     return 0;
   }
 
-  return Math.round(
-    (value / total) * 100
-  );
+  return Math.round((value / total) * 100);
 }
 
-function calculateGroupAverages(
-  participants
-) {
+function calculateGroupAverages(participants) {
   if (!participants.length) {
     return null;
   }
@@ -56,44 +47,35 @@ function calculateGroupAverages(
 
   const characters = {};
 
-  characterKeys.forEach(
-    (character) => {
-      characters[character] = {};
+  characterKeys.forEach((character) => {
+    characters[character] = {};
 
-      statKeys.forEach((stat) => {
-        const values = participants
-          .map(
-            (participant) =>
-              participant.characters
-                ?.[
-                  character
-                ]?.[stat]
-          )
-          .filter(
-            (value) =>
-              typeof value ===
-              "number"
-          );
+    statKeys.forEach((stat) => {
+      const values = participants
+        .map(
+          (participant) =>
+            participant.characters?.[character]?.[stat]
+        )
+        .filter(
+          (value) =>
+            typeof value === "number"
+        );
 
-        if (!values.length) {
-          characters[character][stat] =
-            50;
+      if (!values.length) {
+        characters[character][stat] = 50;
+        return;
+      }
 
-          return;
-        }
+      const average =
+        values.reduce(
+          (sum, value) => sum + value,
+          0
+        ) / values.length;
 
-        const average =
-          values.reduce(
-            (sum, value) =>
-              sum + value,
-            0
-          ) / values.length;
-
-        characters[character][stat] =
-          Math.round(average);
-      });
-    }
-  );
+      characters[character][stat] =
+        Math.round(average);
+    });
+  });
 
   return {
     characters,
@@ -101,7 +83,7 @@ function calculateGroupAverages(
 }
 
 // --------------------------------------------------
-// Character block
+// Character card
 // --------------------------------------------------
 
 function CharacterFinalCard({
@@ -124,25 +106,19 @@ function CharacterFinalCard({
       <FinalStat
         label="ПІДОЗРА"
         value={data.suspicion}
-        groupValue={
-          groupData?.suspicion
-        }
+        groupValue={groupData?.suspicion}
       />
 
       <FinalStat
         label="ЕМПАТІЯ"
         value={data.empathy}
-        groupValue={
-          groupData?.empathy
-        }
+        groupValue={groupData?.empathy}
       />
 
       <FinalStat
         label="ВІДПОВІДАЛЬНІСТЬ"
         value={data.responsibility}
-        groupValue={
-          groupData?.responsibility
-        }
+        groupValue={groupData?.responsibility}
       />
     </div>
   );
@@ -158,8 +134,9 @@ function FinalStat({
   groupValue,
 }) {
   return (
-    <div className="mb-6">
-      <div className="mb-2 flex justify-between">
+    <div className="mb-6 last:mb-0">
+      {/* Твій результат */}
+      <div className="mb-2 flex items-center justify-between">
         <span className="text-[10px] tracking-[0.2em] text-neutral-500">
           {label}
         </span>
@@ -169,19 +146,19 @@ function FinalStat({
         </span>
       </div>
 
-      <div className="h-1 bg-neutral-900">
+      <div className="h-1 w-full overflow-hidden bg-neutral-900">
         <div
-          className="h-1 bg-neutral-400 transition-all duration-700"
+          className="animate-stat-fill h-full bg-neutral-400"
           style={{
-            width: `${value}%`,
+            "--stat-width": `${value}%`,
           }}
         />
       </div>
 
-      {typeof groupValue ===
-        "number" && (
-        <>
-          <div className="mt-3 flex justify-between">
+      {/* Груповий результат */}
+      {typeof groupValue === "number" && (
+        <div className="mt-4">
+          <div className="mb-1 flex items-center justify-between">
             <span className="text-[9px] tracking-[0.15em] text-neutral-700">
               СЕРЕДНЄ ПО ГРУПІ
             </span>
@@ -191,22 +168,22 @@ function FinalStat({
             </span>
           </div>
 
-          <div className="mt-1 h-px bg-neutral-900">
+          <div className="h-px w-full overflow-hidden bg-neutral-900">
             <div
-              className="h-px bg-red-900 transition-all duration-700"
+              className="animate-stat-fill-delayed h-px bg-red-900"
               style={{
-                width: `${groupValue}%`,
+                "--stat-width": `${groupValue}%`,
               }}
             />
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 }
 
 // --------------------------------------------------
-// FINAL
+// Final
 // --------------------------------------------------
 
 export default function Final() {
@@ -232,14 +209,11 @@ export default function Final() {
   // ----------------------------------------------
 
   const profileEntries =
-    Object.entries(
-      readerProfile
-    );
+    Object.entries(readerProfile);
 
   const totalProfileScore =
     profileEntries.reduce(
-      (sum, [, value]) =>
-        sum + value,
+      (sum, [, value]) => sum + value,
       0
     );
 
@@ -256,8 +230,7 @@ export default function Final() {
           ),
       }))
       .sort(
-        (a, b) =>
-          b.value - a.value
+        (a, b) => b.value - a.value
       );
 
   const mainProfile =
@@ -276,7 +249,7 @@ export default function Final() {
   );
 
   // ----------------------------------------------
-  // Save final result
+  // Збереження результату
   // ----------------------------------------------
 
   useEffect(() => {
@@ -308,18 +281,21 @@ export default function Final() {
   }, [characters, readerProfile]);
 
   // ----------------------------------------------
-  // Realtime group listener
+  // Realtime групові результати
   // ----------------------------------------------
 
   useEffect(() => {
     const unsubscribe =
       subscribeToGroupResults(
         (results) => {
-          setGroupParticipants(
-            results
-          );
+          setGroupParticipants(results);
         },
-        () => {
+        (error) => {
+          console.error(
+            "Не вдалося отримати результати групи:",
+            error
+          );
+
           setFirebaseError(true);
         }
       );
@@ -328,6 +304,10 @@ export default function Final() {
       unsubscribe();
     };
   }, []);
+
+  // ----------------------------------------------
+  // Render
+  // ----------------------------------------------
 
   return (
     <main className="min-h-screen px-6 py-8">
@@ -345,7 +325,7 @@ export default function Final() {
         </h1>
       </div>
 
-      {/* FIREBASE STATUS */}
+      {/* GROUP STATUS */}
 
       <div className="mb-8 border border-neutral-900 p-4">
         <div className="text-[9px] tracking-[0.25em] text-neutral-700">
@@ -375,19 +355,14 @@ export default function Final() {
         </div>
 
         <div className="space-y-8">
-          {Object.entries(
-            characters
-          ).map(
+          {Object.entries(characters).map(
             ([key, character]) => (
               <CharacterFinalCard
                 key={key}
                 character={key}
                 data={character}
                 groupData={
-                  groupAverages
-                    ?.characters?.[
-                    key
-                  ]
+                  groupAverages?.characters?.[key]
                 }
               />
             )
@@ -421,11 +396,11 @@ export default function Final() {
                   </span>
                 </div>
 
-                <div className="h-1 bg-neutral-900">
+                <div className="h-1 overflow-hidden bg-neutral-900">
                   <div
-                    className="h-1 bg-neutral-500 transition-all duration-1000"
+                    className="animate-stat-fill h-1 bg-neutral-500"
                     style={{
-                      width: `${percentage}%`,
+                      "--stat-width": `${percentage}%`,
                     }}
                   />
                 </div>
@@ -453,10 +428,7 @@ export default function Final() {
           </h2>
 
           <p className="mt-6 text-center text-sm leading-7 text-neutral-500">
-            {
-              mainProfile.profile
-                .description
-            }
+            {mainProfile.profile.description}
           </p>
         </section>
       )}
@@ -472,9 +444,7 @@ export default function Final() {
 
         <Button
           variant="secondary"
-          onClick={() => {
-            resetGame();
-          }}
+          onClick={resetGame}
         >
           ПОЧАТИ СПОЧАТКУ
         </Button>
